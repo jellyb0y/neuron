@@ -41,7 +41,16 @@ class Neyron():
 			Метод вычисления эксп. функции
 		'''
 		a = self.a
-		return 1 / (1 + exp(a * sum))
+		return 1 / (1 + exp(-a * sum))
+
+
+	def __func_disc(self, sum_):
+		sigmoid = self.__func(sum_)
+		if sigmoid > 0.75:
+			return 1
+		elif sigmoid <= 0.75 and sigmoid >= 0.25:
+			return 0
+		else: return -1
 
 
 	def __sum(self, x, w):
@@ -71,6 +80,6 @@ class Neyron():
 			raise Exceptions.InvalidDim
 
 		sum_ = self.__sum(x, w)
-		result = self.__func(sum_)
+		result = self.__func_disc(sum_)
 
 		return result
