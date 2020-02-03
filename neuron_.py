@@ -10,6 +10,7 @@ class Exceptions():
 	InvalidObjectSame = Exception('The same object id was received')
 	InvalidID = Exception('Invalid ID was received')
 	FullObject = Exception('Object Neuron is already filled up')
+	UnexpectedError = Exception('UnexpectedError')
 
 
 class Symbol():
@@ -20,16 +21,15 @@ class Symbol():
 			raise ValueError
 
 		self.string = string
-		self.value = self.__get_value()
+		self.__get_value()
 		
 	def __get_value(self):
 		encode = self.string
 		rand_ = random()
 		time_ = time()
 
-		string = '{}_{}'.format(encode, rand_, time_)
+		string = '{}_{}_{}'.format(encode, rand_, time_)
 		self.value = md5(string.encode()).hexdigest()
-		return self.value
 
 
 class EmptyNeuron():
@@ -86,6 +86,7 @@ class NeuronModel():
 		self.inputs_values = {}
 		self.inputs_weights = {}
 		self.koef = koef
+		self.sum = 0
 
 		self.symbol = Symbol('NeuronModel')
 		self.id_ = self.symbol.value
@@ -119,7 +120,7 @@ class NeuronModel():
 		try:
 			index = object_.id_
 			if not index in self.inputs:
-				raise InvalidObject
+				raise Exceptions.InvalidObject
 			self.inputs_values[index] = value
 		except KeyError:
 			raise Exceptions.InvalidID
@@ -140,8 +141,8 @@ class NeuronModel():
 		try:
 			index = object_.id_
 			if not index in self.inputs:
-				raise InvalidObject
-			self.inputs_weights[index] = value
+				raise Exceptions.InvalidObject
+			self.inputs_weights[index] = weight
 		except KeyError:
 			raise Exceptions.InvalidID
 
@@ -160,24 +161,24 @@ class NeuronModel():
 		index = output.id_
 		self.outputs[index] = output
 
-	def activation_func(self, sum_):
-		return 1 / (1 + exp(-self.koef * sum_))
+	def activation_func(self):
+		return 1 / (1 + exp(-self.koef * self.sum))
 
-	def df_activation_func(self, sum_):
+	def df_activation_func(self):
 		koef = self.koef
-		x = -koef * sum_
+		x = -koef * self.sum
 		return koef * exp(x) / power((1 + exp(x)), 2)
 
 	def calculate_value(self):
 		values = self.inputs_values
 		weights = self.inputs_weights
-		sum_ = 0
+		self.sum = 0
 
 		for id_ in self.inputs:
-			sum_ += values[id_] * weights[id_]
+			self.sum += values[id_] * weights[id_]
 
 		self.inputs_values = {}
-		self.value = self.activation_func(sum_)
+		self.value = self.activation_func()
 		
 		if self.outputs:
 			for index in self.outputs:
@@ -187,11 +188,11 @@ class NeuronModel():
 class NeuronDigitModel(NeuronModel):
 	"""docstring for Symbol"""
 
-	def activation_func(self, sum_):
-		if sum_ >= 0.5:
+	def activation_func(self):
+		if self.sum >= 0.5:
 			return 1
 		else:
 			return 0
 
-	def df_activation_func(self, sum_):
+	def df_activation_func(self):
 		return 1
