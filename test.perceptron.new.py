@@ -1,15 +1,16 @@
 from perceptron_ import Perceptron
 
-input_arr = [0, 1, 0, 1, 0]
-desired_arr = [1, 0, 1, 0, 1]
+samples = {
+    (0, 1, 1, 1): (0, 1, 1, 1),
+    (1, 0, 1, 1): (1, 0, 1, 1),
+    (1, 1, 0, 1): (1, 1, 0, 1),
+    (1, 1, 1, 0): (1, 1, 1, 0)
+}
 
-perceptron = Perceptron(5, 1, 1, 5, 'digit')
-result = perceptron.calc(input_arr)
+perceptron = Perceptron(4, 1, 4, 4, 'digit')
 
-print(result)
+perceptron.learn(samples, trace_flag=True, learning_constant=1.0)
 
-perceptron.learn(input_arr, desired_arr, trace_flag=True, delta=0.001)
-
-result = perceptron.calc(input_arr)
-
-print(result)
+for input_arr, desired_arr in samples.items():
+    result = perceptron.calc(input_arr)
+    print(result, desired_arr)

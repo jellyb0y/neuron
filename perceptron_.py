@@ -16,9 +16,9 @@ class Perceptron():
 		self.d_layers = d_layers
 		self.c_outputs = c_outputs
 
-		self.base_model = NeuronModel
+		self.base_output_model = NeuronModel
 		if type_ == 'digit':
-			self.base_model = NeuronDigitModel
+			self.base_output_model = NeuronDigitModel
 
 		self.inputs = []
 		self.layers = []
@@ -33,17 +33,17 @@ class Perceptron():
 
 		layer = []
 		for _ in range(self.d_layers):
-			layer.append(self.base_model(self.c_inputs))
+			layer.append(NeuronModel(self.c_inputs))
 		self.layers.append(layer)
 
 		for _ in range(1, self.c_layers):
 			layer = []
 			for _ in range(self.d_layers):
-				layer.append(self.base_model(self.d_layers))
+				layer.append(NeuronModel(self.d_layers))
 			self.layers.append(layer)
 
 		for _ in range(self.c_outputs):
-			self.outputs.append(self.base_model(self.d_layers))
+			self.outputs.append(self.base_output_model(self.d_layers))
 
 	def tie_layers(self):
 		first_layer = self.layers[0]
@@ -76,12 +76,12 @@ class Perceptron():
 		return output_arr
 
 	def back_propagation(self, input_arr, desired_arr):
-		output_arr = self.calc(input_arr);
+		output_arr = self.calc(input_arr)
 
 		sum_error = 0
 
 		for index, output in enumerate(output_arr):
-			dif = desired_arr[index] - output
+			dif = output - desired_arr[index]
 			sum_error += abs(dif)
 			curent_output = self.outputs[index]
 			self.propagation(curent_output, dif)
@@ -92,36 +92,20 @@ class Perceptron():
 		if isinstance(neuron, EmptyNeuron):
 			return None
 
-		sum_weight = 0
-		for _, weight in neuron.inputs_weights.items():
-			sum_weight += weight
+		df = neuron.df_activation_func()
+		weight_delta = dif * df
 
-		if sum_weight != 0:
-			for index, weight in neuron.inputs_weights.items():
-				share_error = (weight / sum_weight) * dif
-				inputs_neuron = neuron.inputs[index]
+		for index, _ in neuron.inputs_weights.items():
+			inputs_neuron = neuron.inputs[index]
+			value = inputs_neuron.value
+			neuron.inputs_weights[index] -= weight_delta * self.learning_constant * value
 
-				df = 0
-				if not isinstance(inputs_neuron, EmptyNeuron):
-					df = inputs_neuron.df_activation_func()
-
-				value = inputs_neuron.value
-
-				if abs(df) > self.delta:
-					weight_error = share_error * (value / df)
-				else:
-					weight_error = share_error
-				func_error = share_error - weight_error
-
-				self.propagation(inputs_neuron, func_error)
-				neuron.inputs_weights[index] += weight_error * self.learning_constant * value
-		else:
-			raise Exceptions.UnexpectedError
+			func_error = neuron.inputs_weights[index] * dif
+			self.propagation(inputs_neuron, func_error)
 
 	def learn(\
 		self,\
-		input_arr,\
-		desired_arr,\
+		samples,\
 		learning_constant=0.1,\
 		trace_flag=False,\
 		stop_condition='delta',\
@@ -136,12 +120,20 @@ class Perceptron():
 		error = None
 		if stop_condition == 'delta':
 			while (error == None or error > delta):
-				error = self.back_propagation(input_arr, desired_arr)
+				error = 0
+
+				for input_arr, desired_arr in samples.items():
+					error += abs(self.back_propagation(input_arr, desired_arr))
+
 				if trace_flag:
 					print(error)
 		elif isinstance(stop_condition, int):
 			for _ in range(stop_condition):
-				error = self.back_propagation(input_arr, desired_arr)
+				error = 0
+
+				for input_arr, desired_arr in samples.items():
+					error += abs(self.back_propagation(input_arr, desired_arr))
+
 				if trace_flag:
 					print(error)
 		else:

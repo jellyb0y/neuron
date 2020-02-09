@@ -165,9 +165,7 @@ class NeuronModel():
 		return 1 / (1 + exp(-self.koef * self.sum))
 
 	def df_activation_func(self):
-		koef = self.koef
-		x = -koef * self.sum
-		return koef * exp(x) / power((1 + exp(x)), 2)
+		return self.value * (1 - self.value)
 
 	def calculate_value(self):
 		values = self.inputs_values
